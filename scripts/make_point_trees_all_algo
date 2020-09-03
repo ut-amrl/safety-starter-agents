@@ -1,0 +1,42 @@
+#!/bin/bash
+echo "Starting to run the python files"
+echo "Generating PPO Car Trees"
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_no_depth_50ep
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_depth3_50ep --max_depth 3
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_depth5_50ep --max_depth 5
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_depth10_50ep --max_depth 10
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_depth15_50ep --max_depth 15
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_depth20_50ep --max_depth 20
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --episodes 50 --file_name point_ppo_depth25_50ep --max_depth 25
+echo "Generating PPO Langrangian Car Trees"
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_no_depth_50ep
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_depth3_50ep --max_depth 3
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_depth5_50ep --max_depth 5
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_depth10_50ep --max_depth 10
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_depth15_50ep --max_depth 15
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_depth20_50ep --max_depth 20
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_lagrangian_PointButton1/2020-08-23_17-05-23-ppo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_ppo_lang_depth25_50ep --max_depth 25
+echo "Generating TRPO Car Trees"
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_no_depth_50ep
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_depth3_50ep --max_depth 3
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_depth5_50ep --max_depth 5
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_depth10_50ep --max_depth 10
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_depth15_50ep --max_depth 15
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_depth20_50ep --max_depth 20
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_PointButton1/2020-08-23_17-06-02-trpo_PointButton1_s10 --episodes 50 --file_name point_trpo_depth25_50ep --max_depth 25
+echo "Generating TRPO Lang Car Trees"
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_no_depth_50ep
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_depth3_50ep --max_depth 3
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_depth5_50ep --max_depth 5
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_depth10_50ep --max_depth 10
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_depth15_50ep --max_depth 15
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_depth20_50ep --max_depth 20
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_trpo_lagrangian_PointButton1/2020-08-23_17-06-43-trpo_lagrangian_PointButton1_s10 --episodes 50 --file_name point_trpo_lang_depth25_50ep --max_depth 25
+echo "Generating CPO Car Trees"
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_no_depth_50ep
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_depth3_50ep --max_depth 3
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_depth5_50ep --max_depth 5
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_depth10_50ep --max_depth 10
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_depth15_50ep --max_depth 15
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_depth20_50ep --max_depth 20
+python generate_tree.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_cpo_PointButton1/2020-08-23_17-07-26-cpo_PointButton1_s10 --episodes 50 --file_name point_cpo_depth25_50ep --max_depth 25

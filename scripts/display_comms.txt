@@ -1,0 +1,2 @@
+# Trained on roboFleet and transferred over as basic policy
+python test_policy.py /Users/JoshHoffman/ut_austin/bayes_ps/safety-starter-agents/data/2020-07-15_17-08-31-ppo_PointButton1_s10

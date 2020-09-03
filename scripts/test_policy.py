@@ -6,12 +6,12 @@ from safe_rl.utils.load_utils import load_policy
 from safe_rl.utils.logx import EpochLogger
 
 
-
 def run_policy(env, get_action, max_ep_len=None, num_episodes=100, render=True):
 
     assert env is not None, \
         "Environment not found!\n\n It looks like the environment wasn't saved, " + \
         "and we can't run the agent in it. :("
+    all_ep_ret = []
 
     logger = EpochLogger()
     o, r, d, ep_ret, ep_cost, ep_len, n = env.reset(), 0, False, 0, 0, 0, 0
@@ -29,14 +29,19 @@ def run_policy(env, get_action, max_ep_len=None, num_episodes=100, render=True):
 
         if d or (ep_len == max_ep_len):
             logger.store(EpRet=ep_ret, EpCost=ep_cost, EpLen=ep_len)
-            print('Episode %d \t EpRet %.3f \t EpCost %.3f \t EpLen %d'%(n, ep_ret, ep_cost, ep_len))
+            print('Episode %d \t EpRet %.3f \t EpCost %.3f \t EpLen %d' % (n, ep_ret, ep_cost, ep_len))
+            all_ep_ret.append(ep_ret)
             o, r, d, ep_ret, ep_cost, ep_len = env.reset(), 0, False, 0, 0, 0
             n += 1
 
+    # This is where they store the values to log and dumpself.
+    # Change this to include values such as number of times the goal was met
+    # and hazards hit
     logger.log_tabular('EpRet', with_min_and_max=True)
     logger.log_tabular('EpCost', with_min_and_max=True)
     logger.log_tabular('EpLen', average_only=True)
     logger.dump_tabular()
+    return all_ep_ret
 
 
 if __name__ == '__main__':
@@ -50,6 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--deterministic', '-d', action='store_true')
     args = parser.parse_args()
     env, get_action, sess = load_policy(args.fpath,
-                                        args.itr if args.itr >=0 else 'last',
+                                        args.itr if args.itr >= 0 else 'last',
                                         args.deterministic)
+    print(env)
     run_policy(env, get_action, args.len, args.episodes, not(args.norender))

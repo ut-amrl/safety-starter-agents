@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import gym 
+import gym
 import safety_gym
 import safe_rl
 from safe_rl.utils.run_utils import setup_logger_kwargs
@@ -9,7 +9,7 @@ from safe_rl.utils.mpi_tools import mpi_fork
 def main(robot, task, algo, seed, exp_name, cpu):
 
     # Verify experiment
-    robot_list = ['point', 'car', 'doggo']
+    robot_list = ['point', 'car', 'doggo', 'point_shift_extreme']
     task_list = ['goal1', 'goal2', 'button1', 'button2', 'push1', 'push2']
     algo_list = ['ppo', 'ppo_lagrangian', 'trpo', 'trpo_lagrangian', 'cpo']
 
@@ -22,7 +22,7 @@ def main(robot, task, algo, seed, exp_name, cpu):
 
     # Hyperparameters
     exp_name = algo + '_' + robot + task
-    if robot=='Doggo':
+    if robot == 'Doggo':
         num_steps = 1e8
         steps_per_epoch = 60000
     else:
@@ -58,7 +58,6 @@ def main(robot, task, algo, seed, exp_name, cpu):
          )
 
 
-
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
@@ -69,5 +68,5 @@ if __name__ == '__main__':
     parser.add_argument('--exp_name', type=str, default='')
     parser.add_argument('--cpu', type=int, default=1)
     args = parser.parse_args()
-    exp_name = args.exp_name if not(args.exp_name=='') else None
+    exp_name = args.exp_name if not(args.exp_name == '') else None
     main(args.robot, args.task, args.algo, args.seed, exp_name, args.cpu)

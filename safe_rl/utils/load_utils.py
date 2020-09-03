@@ -36,6 +36,10 @@ def load_policy(fpath, itr='last', deterministic=False):
     try:
         state = joblib.load(osp.join(fpath, 'vars'+itr+'.pkl'))
         env = state['env']
+        # env.config['robot_base'] = 'xmls/point_shift.xml'
+        # print("Robot base is: " + env.config['robot_base'])
+        # setattr(env, 'robot_base', 'xmls/point_shift.xml')
+        # print("The attribute is: " + getattr(env, 'robot_base'))
     except:
         env = None
 

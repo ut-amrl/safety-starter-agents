@@ -28,9 +28,6 @@ def shift_dynamics(dynamic, xml, new_val):
             motor.attrib = x[i]
             i += 1
         tree.write(xml)
-    elif dynamic == 'joint':
-        # TODO: implement joint
-        raise NotImplementedError('Have not implemented switch for joint')
     elif dynamic == 'velocity':
         x = [i.attrib for i in root.iter('velocity')]
         x[0]['forcerange'] = '-' + str(new_val) + ' ' + str(new_val)
@@ -40,6 +37,34 @@ def shift_dynamics(dynamic, xml, new_val):
             i += 1
         tree.write(xml)
         print("Updated dynamics for", dynamic)
+    elif dynamic == 'pointarrow':
+        x = [i.attrib for i in root.iter('geom')]
+        x[3]['size'] = str(new_val) + ' ' + str(new_val) + ' ' + str(new_val)
+        i = 0
+        for pa in root.iter('geom'):
+            pa.attrib = x[i]
+            i += 1
+        tree.write(xml)
+    elif dynamic == 'robot':
+        x = [i.attrib for i in root.iter('geom')]
+        x[2]['size'] = str(new_val)
+        i = 0
+        for pa in root.iter('geom'):
+            pa.attrib = x[i]
+            i += 1
+        tree.write(xml)
+    elif dynamic == 'motor_false':
+        raise NotImplementedError('Have not implemented')
+        # TODO: Need to implement
+    elif dynamic == 'jointx':
+        # TODO: implement joint
+        raise NotImplementedError('Have not implemented')
+    elif dynamic == 'jointy':
+        # TODO: implement joint
+        raise NotImplementedError('Have not implemented')
+    elif dynamic == 'jointz':
+        # TODO: implement joint
+        raise NotImplementedError('Have not implemented')
 
 
 def get_range_vals(dynamic):
@@ -52,8 +77,8 @@ def get_range_vals(dynamic):
     Returns:
         The list of floats of the new values
     '''
-    if dynamic == 'motor' or dynamic == 'velocity':
-        return [0.0025, 0.002, 0.001, 0.0005, 0.0001, 0.005, 0.01, 0.02, 0.03,
+    if dynamic == 'motor' or dynamic == 'velocity' or dynamic == 'pointarrow':
+        return [0.0001, 0.0005, 0.0025, 0.002, 0.001, 0.005, 0.01, 0.02, 0.03,
                 0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
                 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35,
                 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
@@ -73,6 +98,15 @@ def get_range_vals(dynamic):
                 0.047, 0.048, 0.049, 0.05, 0.0525, 0.055, 0.0575, 0.06,
                 0.0625, 0.065, 0.0675, 0.07, 0.0725, 0.075, 0.0775, 0.08, 0.825,
                 0.085, 0.0875, 0.09, 0.0925, 0.095, 0.0975, 1.0]
+    elif dynamic == 'robot':
+        return [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009,
+                0.01, 0.0125, 0.015, 0.0175, 0.02, 0.0225, 0.025, 0.0275, 0.03,
+                0.0325, 0.035, 0.0375, 0.04, 0.0425, 0.0475, 0.05, 0.0525,
+                0.055, 0.0575, 0.06, 0.0625, 0.065, 0.0675, 0.07, 0.0725, 0.075,
+                0.0775, 0.08, 0.081, 0.082, 0.083, 0.084, 0.085, 0.086, 0.087,
+                0.088, 0.089, 0.09, 0.091, 0.092, 0.093, 0.094, 0.095, 0.096,
+                0.097, 0.098, 0.099, 0.0999, 0.1, 0.15, 0.2]
+    raise NotImplementedError('Have not implemented the dynamic:', dynamic)
 
 
 def test_dynamics(env, get_action, dynamic, xml_file, episodes=20):

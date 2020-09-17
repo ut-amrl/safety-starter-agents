@@ -1,0 +1,4 @@
+python compare_shifts.py --dynamic velocity
+python compare_shifts.py --dynamic motor
+python compare_shifts.py --dynamic pointarrow
+python compare_shifts.py --dynamic robot

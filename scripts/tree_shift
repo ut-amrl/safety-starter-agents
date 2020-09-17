@@ -1,0 +1,27 @@
+cd /home/hoffmanj/prog_evolution/safety-gym
+git checkout -- /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml
+
+cd /home/hoffmanj/prog_evolution/safety-starter-agents/scripts
+python domain_adaptation.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --dynamic pointarrow --xml_file /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml --tree_pickle /home/hoffmanj/prog_evolution/safety-starter-agents/scripts/tree_data_point_ppo_depth5_50ep.pkl
+
+cd /home/hoffmanj/prog_evolution/safety-gym
+git checkout -- /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml
+
+cd /home/hoffmanj/prog_evolution/safety-starter-agents/scripts
+python domain_adaptation.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --dynamic robot --xml_file /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml --tree_pickle /home/hoffmanj/prog_evolution/safety-starter-agents/scripts/tree_data_point_ppo_depth5_50ep.pkl
+
+cd /home/hoffmanj/prog_evolution/safety-gym
+git checkout -- /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml
+
+cd /home/hoffmanj/prog_evolution/safety-starter-agents/scripts
+python domain_adaptation.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --dynamic velocity --xml_file /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml --tree_pickle /home/hoffmanj/prog_evolution/safety-starter-agents/scripts/tree_data_point_ppo_depth5_50ep.pkl
+
+cd /home/hoffmanj/prog_evolution/safety-gym
+git checkout -- /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml
+
+cd /home/hoffmanj/prog_evolution/safety-starter-agents/scripts
+python domain_adaptation.py /home/hoffmanj/prog_evolution/safety-starter-agents/data/2020-08-23_ppo_PointButton1/2020-08-23_17-04-50-ppo_PointButton1_s10 --dynamic motor --xml_file /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml --tree_pickle /home/hoffmanj/prog_evolution/safety-starter-agents/scripts/tree_data_point_ppo_depth5_50ep.pkl
+
+cd /home/hoffmanj/prog_evolution/safety-gym
+git checkout -- /home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml
+cd /home/hoffmanj/prog_evolution/safety-starter-agents/scripts

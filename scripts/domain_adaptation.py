@@ -77,16 +77,18 @@ def get_range_vals(dynamic):
     Returns:
         The list of floats of the new values
     '''
-    if dynamic == 'motor' or dynamic == 'velocity' or dynamic == 'pointarrow':
-        return [0.0001, 0.0005, 0.0025, 0.002, 0.001, 0.005, 0.01, 0.02, 0.03,
-                0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
-                0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35,
-                0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
-                0.95, 1.0, 0.035, 0.0325, 0.0375, 0.041, 0.042, 0.043, 0.044,
-                0.045, 0.046, 0.047, 0.048, 0.049, 0.051, 0.052, 0.053, 0.054,
-                0.055, 0.056, 0.057, 0.058, 0.059, 0.055, 0.0575, 0.0625, 0.065,
-                0.0675]
-        # return [0.005]
+    if dynamic == 'motor' or dynamic == 'velocity':
+        # return [0.0001, 0.0005, 0.0025, 0.002, 0.001, 0.005, 0.01, 0.02, 0.03,
+        #         0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
+        #         0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35,
+        #         0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
+        #         0.95, 1.0, 0.035, 0.0325, 0.0375, 0.041, 0.042, 0.043, 0.044,
+        #         0.045, 0.046, 0.047, 0.048, 0.049, 0.051, 0.052, 0.053, 0.054,
+        #         0.055, 0.056, 0.057, 0.058, 0.059, 0.055, 0.0575, 0.0625, 0.065,
+        #         0.0675]
+        return [0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4,
+                0.45, 0.5, 0.6, 0.7, 0.75, 0.035, 0.0375,
+                0.0425, 0.045, 0.0475, 0.0525, 0.055, 0.0575, 0.06]
     elif dynamic == 'joint':
         return [0.001]
     elif dynamic == 'size':
@@ -105,7 +107,13 @@ def get_range_vals(dynamic):
                 0.055, 0.0575, 0.06, 0.0625, 0.065, 0.0675, 0.07, 0.0725, 0.075,
                 0.0775, 0.08, 0.081, 0.082, 0.083, 0.084, 0.085, 0.086, 0.087,
                 0.088, 0.089, 0.09, 0.091, 0.092, 0.093, 0.094, 0.095, 0.096,
-                0.097, 0.098, 0.099, 0.0999, 0.1, 0.15, 0.2]
+                0.097, 0.098, 0.099, 0.0999, 0.1, 0.10001, 0.15, 0.2]
+    elif dynamic == 'pointarrow':
+        return [0.0001, 0.0005, 0.0025, 0.002, 0.001, 0.002, 0.003, 0.04,
+                0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.0125, 0.015, 0.0175,
+                0.02, 0.03,
+                0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
+                0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25]
     raise NotImplementedError('Have not implemented the dynamic:', dynamic)
 
 
@@ -134,8 +142,15 @@ def test_dynamics(env, get_action, dynamic, xml_file, episodes=20):
         shift_dynamics(dynamic, xml_file, x_val)
         y_vals = run_policy(env, get_action, 0, episodes, False)
         points[x_val] = y_vals
-    pkl_name = str("shift_data_" + str(dynamic) + '_point_' + str(time.strftime("%Y-%m-%d")) + ".pkl")
+    pkl_name = str("shift_tree_data_" + str(dynamic) + '_point_' + str(time.strftime("%Y-%m-%d")) + ".pkl")
     joblib.dump(points, pkl_name)
+
+
+def get_tree_action(tree_pickle):
+    tree_data = joblib.load(tree_pickle)
+    tree_program = tree_data['tree']
+    print("Got tree function as action function")
+    return lambda a: tree_program.predict([a])
 
 
 if __name__ == '__main__':
@@ -148,8 +163,11 @@ if __name__ == '__main__':
     parser.add_argument('--deterministic', '-d', action='store_true')
     parser.add_argument('--dynamic', '-dn', type=str, default="")
     parser.add_argument('--xml_file', '-xf', type=str, default="")
+    parser.add_argument('--tree_pickle', '-tp', type=str, default="")
     args = parser.parse_args()
     env, get_action, _ = load_policy(args.fpath,
                                      args.itr if args.itr >= 0 else 'last',
                                      args.deterministic)
+    if args.tree_pickle != "":
+        get_action = get_tree_action(args.tree_pickle)
     test_dynamics(env, get_action, args.dynamic, args.xml_file, args.episodes)

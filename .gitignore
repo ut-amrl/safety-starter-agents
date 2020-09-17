@@ -112,3 +112,6 @@ data
 *.*~
 
 .DS_Store
+
+# personal data that is pickled
+*.pkl

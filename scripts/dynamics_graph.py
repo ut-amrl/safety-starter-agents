@@ -13,7 +13,7 @@ def graph_dynamics(data_object):
     xs = []
     for i in sorted(data.keys()):
         mv = mean(data[i])
-        if mv >= 8.0:
+        if mv >= 3.0:
             xs.append(i)
     print("The min acceptable velocity is:", min(xs))
     print("The max acceptable velocity is:", max(xs))

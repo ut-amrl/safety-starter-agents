@@ -5,6 +5,7 @@ import tty
 import termios
 import select
 import sys
+import numpy as np
 
 
 import threading

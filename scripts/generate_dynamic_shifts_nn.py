@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
-from domain_adaptation import get_range_vals, shift_dynamics
+from domain_adaptation import shift_dynamics
 import experiment
 
 
-def generate_nn_in_d2(robot, task, algo, seed, cpu, dynamic, xml_file):
+def generate_nn_in_d2(robot, task, algo, seed, cpu, dynamic, xml_file, x_val):
     assert dynamic != "", "You did not specify a dynamic"
-    forcerange_vals = get_range_vals(dynamic)
-    for x_val in forcerange_vals:
-        shift_dynamics(dynamic, xml_file, x_val)
-        exp_name = dynamic + '_' + str(x_val) + '_' + str(algo) + '_' + robot.lower() + task.lower()
-        experiment.main(robot, task, algo, seed, exp_name, cpu)
+    shift_dynamics(dynamic, xml_file, x_val)
+    exp_name = dynamic + '_' + str(x_val) + '_' + str(algo) + '_' + robot.lower() + task.lower()
+    experiment.main(robot, task, algo, seed, exp_name, cpu)
 
 
 if __name__ == '__main__':
@@ -20,11 +18,9 @@ if __name__ == '__main__':
     parser.add_argument('--task', type=str, default='Goal1')
     parser.add_argument('--algo', type=str, default='ppo')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--exp_name', type=str, default='')
     parser.add_argument('--cpu', type=int, default=1)
     parser.add_argument('--dynamic', '-dn', type=str, default="")
     parser.add_argument('--xml_file', '-xf', type=str, default="")
+    parser.add_argument('--x_val', '-xv', type=int, default=0)
     args = parser.parse_args()
-    exp_name = args.exp_name if not(args.exp_name == '') else None
-    print("The input exp name is:", exp_name)
-    generate_nn_in_d2(args.robot, args.task, args.algo, args.seed, args.cpu, args.dynamic, args.xml_file)
+    generate_nn_in_d2(args.robot, args.task, args.algo, args.seed, args.cpu, args.dynamic, args.xml_file, args.x_val)

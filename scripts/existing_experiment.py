@@ -4,10 +4,11 @@ import safety_gym
 import safe_rl
 from safe_rl.utils.run_utils import setup_logger_kwargs
 from safe_rl.utils.mpi_tools import mpi_fork
+from run_existing_agent import run_polopt_agent
 import sys
 
 
-def main(robot, task, algo, seed, exp_name, cpu):
+def main(robot, task, algo, seed, exp_name, cpu, fpath, itr, deterministic, hid, lhm, len, cost_lim):
 
     # Verify experiment
     robot_list = ['point', 'car', 'doggo', 'point_shift_extreme']
@@ -41,35 +42,45 @@ def main(robot, task, algo, seed, exp_name, cpu):
     # Prepare Logger
     logger_kwargs = setup_logger_kwargs(exp_name, seed)
 
-    # Algo and Env
-    algo = eval('safe_rl.'+algo)
-    env_name = 'Safexp-'+robot+task+'-v0'
-
-    algo(env_fn=lambda: gym.make(env_name),
-         ac_kwargs=dict(
-             hidden_sizes=(256, 256),
-            ),
-         epochs=epochs,
-         steps_per_epoch=steps_per_epoch,
-         save_freq=save_freq,
-         target_kl=target_kl,
-         cost_lim=cost_lim,
-         seed=seed,
-         logger_kwargs=logger_kwargs
-         )
+    run_polopt_agent(fpath,
+                     itr,
+                     deterministic,
+                     ac_kwargs=dict(hidden_sizes=[args.hid]*args.l),
+                     seed=seed,
+                     # Experience collection:
+                     steps_per_epoch=steps_per_epoch,
+                     epochs=epochs,
+                     max_ep_len=len,
+                     cost_lim=cost_lim,
+                     target_kl=target_kl,
+                     # Logging:
+                     logger_kwargs=logger_kwargs,
+                     save_freq=save_freq
+                     )
     sys.exit()
 
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument('fpath', type=str)
+    parser.add_argument('--itr', '-i', type=int, default=-1)
+    parser.add_argument('--deterministic', '-d', action='store_true')
     parser.add_argument('--robot', type=str, default='Point')
-    parser.add_argument('--task', type=str, default='Goal1')
-    parser.add_argument('--algo', type=str, default='ppo')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--exp_name', type=str, default='')
-    parser.add_argument('--cpu', type=int, default=1)
+    parser.add_argument('--cpu', type=int, default=2)
+    parser.add_argument('--hid', type=int, default=64)
+    parser.add_argument('--hidd_mult', type=int, default=2)
+    parser.add_argument('--len', type=int, default=1000)
+    parser.add_argument('--cost_lim', type=float, default=10)
     args = parser.parse_args()
     exp_name = args.exp_name if not(args.exp_name == '') else None
-    print("The input exp name is:", exp_name)
-    main(args.robot, args.task, args.algo, args.seed, exp_name, args.cpu)
+    fpath = args.fpath
+    itr = args.itr
+    deterministic = args.deterministic
+    hid = args.hid
+    lhm = args.hidd_mult
+    len = args.len
+    cost_lim = args.cost_lim
+    main(args.robot, args.task, args.algo, args.seed, exp_name, args.cpu, fpath, itr, deterministic, hid, lhm, len, cost_lim, args)

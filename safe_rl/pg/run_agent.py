@@ -16,8 +16,11 @@ from safe_rl.utils.mpi_tf import MpiAdamOptimizer, sync_all_params
 from safe_rl.utils.mpi_tools import mpi_fork, proc_id, num_procs, mpi_sum
 import joblib
 from math import pow
+from domain_adaptation import shift_dynamics
 
-# CHECK LINE 96 AND LINE 408
+# CHECK LINE 382, 96, AND 408
+
+
 def gen_mixed_action():
     '''Consumes an observation and passes it into an pre-exiting
     DecisionTreeRegressor that has been generated based on D1 dynamics. We hope
@@ -32,7 +35,6 @@ def gen_mixed_action():
 
     def mixed_action(observation, action):
         nonlocal episode_counter, decision_tree, step_counter
-
 
         # get tree action
         tree_a = decision_tree.predict([observation])
@@ -58,6 +60,8 @@ def gen_mixed_action():
 
 # Multi-purpose agent runner for policy optimization algos
 # (PPO, TRPO, their primal-dual equivalents, CPO)
+
+
 def run_polopt_agent(env_fn,
                      agent=PPOAgent(),
                      actor_critic=mlp_actor_critic,
@@ -89,7 +93,6 @@ def run_polopt_agent(env_fn,
                      logger_kwargs=dict(),
                      save_freq=1
                      ):
-
 
     #=========================================================================#
     #  Prepare logger, seed, and environment in this process                  #
@@ -146,11 +149,10 @@ def run_polopt_agent(env_fn,
 
     # Count variables
     var_counts = tuple(count_vars(scope) for scope in ['pi', 'vf', 'vc'])
-    logger.log('\nNumber of parameters: \t pi: %d, \t v: %d, \t vc: %d\n'%var_counts)
+    logger.log('\nNumber of parameters: \t pi: %d, \t v: %d, \t vc: %d\n' % var_counts)
 
     # Make a sample estimate for entropy to use as sanity check
     approx_ent = tf.reduce_mean(-logp)
-
 
     #=========================================================================#
     #  Create replay buffer                                                   #
@@ -162,7 +164,7 @@ def run_polopt_agent(env_fn,
 
     # Experience buffer
     local_steps_per_epoch = int(steps_per_epoch / num_procs())
-    pi_info_shapes = {k: v.shape.as_list()[1:] for k,v in pi_info_phs.items()}
+    pi_info_shapes = {k: v.shape.as_list()[1:] for k, v in pi_info_phs.items()}
     buf = CPOBuffer(local_steps_per_epoch,
                     obs_shape,
                     act_shape,
@@ -171,7 +173,6 @@ def run_polopt_agent(env_fn,
                     lam,
                     cost_gamma,
                     cost_lam)
-
 
     #=========================================================================#
     #  Create computation graph for penalty learning, if applicable           #
@@ -182,9 +183,9 @@ def run_polopt_agent(env_fn,
             # param_init = np.log(penalty_init)
             param_init = np.log(max(np.exp(penalty_init)-1, 1e-8))
             penalty_param = tf.get_variable('penalty_param',
-                                          initializer=float(param_init),
-                                          trainable=agent.learn_penalty,
-                                          dtype=tf.float32)
+                                            initializer=float(param_init),
+                                            trainable=agent.learn_penalty,
+                                            dtype=tf.float32)
         # penalty = tf.exp(penalty_param)
         penalty = tf.nn.softplus(penalty_param)
 
@@ -195,7 +196,6 @@ def run_polopt_agent(env_fn,
             penalty_loss = -penalty * (cur_cost_ph - cost_lim)
         train_penalty = MpiAdamOptimizer(learning_rate=penalty_lr).minimize(penalty_loss)
 
-
     #=========================================================================#
     #  Create computation graph for policy learning                           #
     #=========================================================================#
@@ -205,7 +205,7 @@ def run_polopt_agent(env_fn,
 
     # Surrogate advantage / clipped surrogate advantage
     if agent.clipped_adv:
-        min_adv = tf.where(adv_ph>0,
+        min_adv = tf.where(adv_ph > 0,
                            (1+agent.clip_ratio)*adv_ph,
                            (1-agent.clip_ratio)*adv_ph
                            )
@@ -288,7 +288,6 @@ def run_polopt_agent(env_fn,
     # Optimizer for value learning
     train_vf = MpiAdamOptimizer(learning_rate=vf_lr).minimize(total_value_loss)
 
-
     #=========================================================================#
     #  Create session, sync across procs, and set up saver                    #
     #=========================================================================#
@@ -302,12 +301,10 @@ def run_polopt_agent(env_fn,
     # Setup model saving
     logger.setup_tf_saver(sess, inputs={'x': x_ph}, outputs={'pi': pi, 'v': v, 'vc': vc})
 
-
     #=========================================================================#
     #  Provide session to agent                                               #
     #=========================================================================#
     agent.prepare_session(sess)
-
 
     #=========================================================================#
     #  Create function for running update (called at end of each epoch)       #
@@ -323,7 +320,7 @@ def run_polopt_agent(env_fn,
         #  Prepare feed dict                                                  #
         #=====================================================================#
 
-        inputs = {k:v for k,v in zip(buf_phs, buf.get())}
+        inputs = {k: v for k, v in zip(buf_phs, buf.get())}
         inputs[surr_cost_rescale_ph] = logger.get_stats('EpLen')[0]
         inputs[cur_cost_ph] = cur_cost
 
@@ -374,9 +371,6 @@ def run_polopt_agent(env_fn,
                 deltas['Delta'+k] = post_update_measures[k] - pre_update_measures[k]
         logger.store(KL=post_update_measures['KL'], **deltas)
 
-
-
-
     #=========================================================================#
     #  Run main environment interaction loop                                  #
     #=========================================================================#
@@ -385,6 +379,7 @@ def run_polopt_agent(env_fn,
     o, r, d, c, ep_ret, ep_cost, ep_len = env.reset(), 0, False, 0, 0, 0, 0
     cur_penalty = 0
     cum_cost = 0
+    epochs = epochs * 2
 
     for epoch in range(epochs):
 
@@ -394,7 +389,7 @@ def run_polopt_agent(env_fn,
         for t in range(local_steps_per_epoch):
 
             # Possibly render
-            if render and proc_id()==0 and t < 1000:
+            if render and proc_id() == 0 and t < 1000:
                 env.render()
 
             # Get outputs from policy
@@ -433,14 +428,14 @@ def run_polopt_agent(env_fn,
             ep_len += 1
 
             terminal = d or (ep_len == max_ep_len)
-            if terminal or (t==local_steps_per_epoch-1):
+            if terminal or (t == local_steps_per_epoch-1):
 
                 # If trajectory didn't reach terminal state, bootstrap value target(s)
                 if d and not(ep_len == max_ep_len):
                     # Note: we do not count env time out as true terminal state
                     last_val, last_cval = 0, 0
                 else:
-                    feed_dict={x_ph: o[np.newaxis]}
+                    feed_dict = {x_ph: o[np.newaxis]}
                     if agent.reward_penalized:
                         last_val = sess.run(v, feed_dict=feed_dict)
                         last_cval = 0
@@ -452,7 +447,7 @@ def run_polopt_agent(env_fn,
                 if terminal:
                     logger.store(EpRet=ep_ret, EpLen=ep_len, EpCost=ep_cost)
                 else:
-                    print('Warning: trajectory cut off by epoch at %d steps.'%ep_len)
+                    print('Warning: trajectory cut off by epoch at %d steps.' % ep_len)
 
                 # Reset environment
                 o, r, d, c, ep_ret, ep_len, ep_cost = env.reset(), 0, False, 0, 0, 0, 0
@@ -526,6 +521,11 @@ def run_polopt_agent(env_fn,
 
         # Show results!
         logger.dump_tabular()
+        if epoch == epochs / 2:
+            xml = '/home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml'
+            shift_dynamics('velocity', xml, 0.35)
+            shift_dynamics('robot', xml, 0.001)
+
 
 if __name__ == '__main__':
     import argparse
@@ -568,14 +568,14 @@ if __name__ == '__main__':
                         objective_penalized=args.objective_penalized,
                         learn_penalty=args.learn_penalty,
                         penalty_param_loss=args.penalty_param_loss)
-    if args.agent=='ppo':
+    if args.agent == 'ppo':
         agent = PPOAgent(**agent_kwargs)
-    elif args.agent=='trpo':
+    elif args.agent == 'trpo':
         agent = TRPOAgent(**agent_kwargs)
-    elif args.agent=='cpo':
+    elif args.agent == 'cpo':
         agent = CPOAgent(**agent_kwargs)
 
-    run_polopt_agent(lambda : gym.make(args.env),
+    run_polopt_agent(lambda: gym.make(args.env),
                      agent=agent,
                      actor_critic=mlp_actor_critic,
                      ac_kwargs=dict(hidden_sizes=[args.hid]*args.l),

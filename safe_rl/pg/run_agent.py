@@ -16,7 +16,7 @@ from safe_rl.utils.mpi_tf import MpiAdamOptimizer, sync_all_params
 from safe_rl.utils.mpi_tools import mpi_fork, proc_id, num_procs, mpi_sum
 import joblib
 from math import pow
-from domain_adaptation import shift_dynamics
+import xml.etree.ElementTree as ET
 
 # CHECK LINE 382, 96, AND 408
 
@@ -524,7 +524,67 @@ def run_polopt_agent(env_fn,
         if epoch == epochs / 2:
             xml = '/home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml'
             shift_dynamics('velocity', xml, 0.35)
-            shift_dynamics('robot', xml, 0.001)
+            # shift_dynamics('robot', xml, 0.001)
+
+
+def shift_dynamics(dynamic, xml, new_val):
+    '''
+    Shifts some value in a specified mujoco xml file, and then it writes the
+    new value to the xml fileself.
+
+    Args:
+        dynamic: A string representing a the certain field in the xml that
+                 represents a dynamic that will be shifted
+        xml: A string that is a file path to an XML that will be edited
+        new_val: A float that will be the new value for that dynamic
+    '''
+    tree = ET.parse(xml)
+    root = tree.getroot()
+    if dynamic == 'motor':
+        x = [i.attrib for i in root.iter('motor')]
+        x[0]['forcerange'] = '-' + str(new_val) + ' ' + str(new_val)
+        i = 0
+        for motor in root.iter('motor'):
+            motor.attrib = x[i]
+            i += 1
+        tree.write(xml)
+    elif dynamic == 'velocity':
+        x = [i.attrib for i in root.iter('velocity')]
+        x[0]['forcerange'] = '-' + str(new_val) + ' ' + str(new_val)
+        i = 0
+        for veloc in root.iter('velocity'):
+            veloc.attrib = x[i]
+            i += 1
+        tree.write(xml)
+        print("Updated dynamics for", dynamic)
+    elif dynamic == 'pointarrow':
+        x = [i.attrib for i in root.iter('geom')]
+        x[3]['size'] = str(new_val) + ' ' + str(new_val) + ' ' + str(new_val)
+        i = 0
+        for pa in root.iter('geom'):
+            pa.attrib = x[i]
+            i += 1
+        tree.write(xml)
+    elif dynamic == 'robot':
+        x = [i.attrib for i in root.iter('geom')]
+        x[2]['size'] = str(new_val)
+        i = 0
+        for pa in root.iter('geom'):
+            pa.attrib = x[i]
+            i += 1
+        tree.write(xml)
+    elif dynamic == 'motor_false':
+        raise NotImplementedError('Have not implemented')
+        # TODO: Need to implement
+    elif dynamic == 'jointx':
+        # TODO: implement joint
+        raise NotImplementedError('Have not implemented')
+    elif dynamic == 'jointy':
+        # TODO: implement joint
+        raise NotImplementedError('Have not implemented')
+    elif dynamic == 'jointz':
+        # TODO: implement joint
+        raise NotImplementedError('Have not implemented')
 
 
 if __name__ == '__main__':

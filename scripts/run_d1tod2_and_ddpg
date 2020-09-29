@@ -1,2 +1,0 @@
-python python experiment.py --robot point --task button1 --algo ppo --seed 10 --exp_name d1_to_d2_velocity_035_take2 --cpu 5
-python ddpg.py

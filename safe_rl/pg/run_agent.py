@@ -380,6 +380,7 @@ def run_polopt_agent(env_fn,
     cur_penalty = 0
     cum_cost = 0
     epochs = epochs * 2
+    updated = False
 
     for epoch in range(epochs):
 
@@ -521,10 +522,11 @@ def run_polopt_agent(env_fn,
 
         # Show results!
         logger.dump_tabular()
-        if epoch == epochs / 2:
+        if epoch == epochs / 2 and not updated:
             xml = '/home/hoffmanj/prog_evolution/safety-gym/safety_gym/xmls/point.xml'
             shift_dynamics('velocity', xml, 0.35)
             # shift_dynamics('robot', xml, 0.001)
+            updated = True
 
 
 def shift_dynamics(dynamic, xml, new_val):

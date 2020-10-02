@@ -110,196 +110,196 @@ def run_polopt_agent(env_fn,
     env = env_fn()
 
     agent.set_logger(logger)
-
-    #=========================================================================#
-    #  Create computation graph for actor and critic (not training routine)   #
-    #=========================================================================#
-
-    # Share information about action space with policy architecture
-    ac_kwargs['action_space'] = env.action_space
-
-    # Inputs to computation graph from environment spaces
-    x_ph, a_ph = placeholders_from_spaces(env.observation_space, env.action_space)
-
-    # Inputs to computation graph for batch data
-    adv_ph, cadv_ph, ret_ph, cret_ph, logp_old_ph = placeholders(*(None for _ in range(5)))
-
-    # Inputs to computation graph for special purposes
-    surr_cost_rescale_ph = tf.placeholder(tf.float32, shape=())
-    cur_cost_ph = tf.placeholder(tf.float32, shape=())
-
-    # Outputs from actor critic
-    ac_outs = actor_critic(x_ph, a_ph, **ac_kwargs)
-    pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent, v, vc = ac_outs
-
-    # Organize placeholders for zipping with data from buffer on updates
-    buf_phs = [x_ph, a_ph, adv_ph, cadv_ph, ret_ph, cret_ph, logp_old_ph]
-    buf_phs += values_as_sorted_list(pi_info_phs)
-
-    # Organize symbols we have to compute at each step of acting in env
-    get_action_ops = dict(pi=pi,
-                          v=v,
-                          logp_pi=logp_pi,
-                          pi_info=pi_info)
-
-    # If agent is reward penalized, it doesn't use a separate value function
-    # for costs and we don't need to include it in get_action_ops; otherwise we do.
-    if not(agent.reward_penalized):
-        get_action_ops['vc'] = vc
-
-    # Count variables
-    var_counts = tuple(count_vars(scope) for scope in ['pi', 'vf', 'vc'])
-    logger.log('\nNumber of parameters: \t pi: %d, \t v: %d, \t vc: %d\n' % var_counts)
-
-    # Make a sample estimate for entropy to use as sanity check
-    approx_ent = tf.reduce_mean(-logp)
-
-    #=========================================================================#
-    #  Create replay buffer                                                   #
-    #=========================================================================#
-
-    # Obs/act shapes
-    obs_shape = env.observation_space.shape
-    act_shape = env.action_space.shape
-
-    # Experience buffer
-    local_steps_per_epoch = int(steps_per_epoch / num_procs())
-    pi_info_shapes = {k: v.shape.as_list()[1:] for k, v in pi_info_phs.items()}
-    buf = CPOBuffer(local_steps_per_epoch,
-                    obs_shape,
-                    act_shape,
-                    pi_info_shapes,
-                    gamma,
-                    lam,
-                    cost_gamma,
-                    cost_lam)
-
-    #=========================================================================#
-    #  Create computation graph for penalty learning, if applicable           #
-    #=========================================================================#
-
-    if agent.use_penalty:
-        with tf.variable_scope('penalty'):
-            # param_init = np.log(penalty_init)
-            param_init = np.log(max(np.exp(penalty_init)-1, 1e-8))
-            penalty_param = tf.get_variable('penalty_param',
-                                            initializer=float(param_init),
-                                            trainable=agent.learn_penalty,
-                                            dtype=tf.float32)
-        # penalty = tf.exp(penalty_param)
-        penalty = tf.nn.softplus(penalty_param)
-
-    if agent.learn_penalty:
-        if agent.penalty_param_loss:
-            penalty_loss = -penalty_param * (cur_cost_ph - cost_lim)
-        else:
-            penalty_loss = -penalty * (cur_cost_ph - cost_lim)
-        train_penalty = MpiAdamOptimizer(learning_rate=penalty_lr).minimize(penalty_loss)
-
-    #=========================================================================#
-    #  Create computation graph for policy learning                           #
-    #=========================================================================#
-
-    # Likelihood ratio
-    ratio = tf.exp(logp - logp_old_ph)
-
-    # Surrogate advantage / clipped surrogate advantage
-    if agent.clipped_adv:
-        min_adv = tf.where(adv_ph > 0,
-                           (1+agent.clip_ratio)*adv_ph,
-                           (1-agent.clip_ratio)*adv_ph
-                           )
-        surr_adv = tf.reduce_mean(tf.minimum(ratio * adv_ph, min_adv))
-    else:
-        surr_adv = tf.reduce_mean(ratio * adv_ph)
-
-    # Surrogate cost
-    surr_cost = tf.reduce_mean(ratio * cadv_ph)
-
-    # Create policy objective function, including entropy regularization
-    pi_objective = surr_adv + ent_reg * ent
-
-    # Possibly include surr_cost in pi_objective
-    if agent.objective_penalized:
-        pi_objective -= penalty * surr_cost
-        pi_objective /= (1 + penalty)
-
-    # Loss function for pi is negative of pi_objective
-    pi_loss = -pi_objective
-
-    # Optimizer-specific symbols
-    if agent.trust_region:
-
-        # Symbols needed for CG solver for any trust region method
-        pi_params = get_vars('pi')
-        flat_g = tro.flat_grad(pi_loss, pi_params)
-        v_ph, hvp = tro.hessian_vector_product(d_kl, pi_params)
-        if agent.damping_coeff > 0:
-            hvp += agent.damping_coeff * v_ph
-
-        # Symbols needed for CG solver for CPO only
-        flat_b = tro.flat_grad(surr_cost, pi_params)
-
-        # Symbols for getting and setting params
-        get_pi_params = tro.flat_concat(pi_params)
-        set_pi_params = tro.assign_params_from_flat(v_ph, pi_params)
-
-        training_package = dict(flat_g=flat_g,
-                                flat_b=flat_b,
-                                v_ph=v_ph,
-                                hvp=hvp,
-                                get_pi_params=get_pi_params,
-                                set_pi_params=set_pi_params)
-
-    elif agent.first_order:
-
-        # Optimizer for first-order policy optimization
-        train_pi = MpiAdamOptimizer(learning_rate=agent.pi_lr).minimize(pi_loss)
-
-        # Prepare training package for agent
-        training_package = dict(train_pi=train_pi)
-
-    else:
-        raise NotImplementedError
-
-    # Provide training package to agent
-    training_package.update(dict(pi_loss=pi_loss,
-                                 surr_cost=surr_cost,
-                                 d_kl=d_kl,
-                                 target_kl=target_kl,
-                                 cost_lim=cost_lim))
-    agent.prepare_update(training_package)
-
-    #=========================================================================#
-    #  Create computation graph for value learning                            #
-    #=========================================================================#
-
-    # Value losses
-    v_loss = tf.reduce_mean((ret_ph - v)**2)
-    vc_loss = tf.reduce_mean((cret_ph - vc)**2)
-
-    # If agent uses penalty directly in reward function, don't train a separate
-    # value function for predicting cost returns. (Only use one vf for r - p*c.)
-    if agent.reward_penalized:
-        total_value_loss = v_loss
-    else:
-        total_value_loss = v_loss + vc_loss
-
-    # Optimizer for value learning
-    train_vf = MpiAdamOptimizer(learning_rate=vf_lr).minimize(total_value_loss)
-
-    #=========================================================================#
-    #  Create session, sync across procs, and set up saver                    #
-    #=========================================================================#
-
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
-
-    # Sync params across processes
-    sess.run(sync_all_params())
-
-    # Setup model saving
-    logger.setup_tf_saver(sess, inputs={'x': x_ph}, outputs={'pi': pi, 'v': v, 'vc': vc})
+    #
+    # #=========================================================================#
+    # #  Create computation graph for actor and critic (not training routine)   #
+    # #=========================================================================#
+    #
+    # # Share information about action space with policy architecture
+    # ac_kwargs['action_space'] = env.action_space
+    #
+    # # Inputs to computation graph from environment spaces
+    # x_ph, a_ph = placeholders_from_spaces(env.observation_space, env.action_space)
+    #
+    # # Inputs to computation graph for batch data
+    # adv_ph, cadv_ph, ret_ph, cret_ph, logp_old_ph = placeholders(*(None for _ in range(5)))
+    #
+    # # Inputs to computation graph for special purposes
+    # surr_cost_rescale_ph = tf.placeholder(tf.float32, shape=())
+    # cur_cost_ph = tf.placeholder(tf.float32, shape=())
+    #
+    # # Outputs from actor critic
+    # ac_outs = actor_critic(x_ph, a_ph, **ac_kwargs)
+    # pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent, v, vc = ac_outs
+    #
+    # # Organize placeholders for zipping with data from buffer on updates
+    # buf_phs = [x_ph, a_ph, adv_ph, cadv_ph, ret_ph, cret_ph, logp_old_ph]
+    # buf_phs += values_as_sorted_list(pi_info_phs)
+    #
+    # # Organize symbols we have to compute at each step of acting in env
+    # get_action_ops = dict(pi=pi,
+    #                       v=v,
+    #                       logp_pi=logp_pi,
+    #                       pi_info=pi_info)
+    #
+    # # If agent is reward penalized, it doesn't use a separate value function
+    # # for costs and we don't need to include it in get_action_ops; otherwise we do.
+    # if not(agent.reward_penalized):
+    #     get_action_ops['vc'] = vc
+    #
+    # # Count variables
+    # var_counts = tuple(count_vars(scope) for scope in ['pi', 'vf', 'vc'])
+    # logger.log('\nNumber of parameters: \t pi: %d, \t v: %d, \t vc: %d\n' % var_counts)
+    #
+    # # Make a sample estimate for entropy to use as sanity check
+    # approx_ent = tf.reduce_mean(-logp)
+    #
+    # #=========================================================================#
+    # #  Create replay buffer                                                   #
+    # #=========================================================================#
+    #
+    # # Obs/act shapes
+    # obs_shape = env.observation_space.shape
+    # act_shape = env.action_space.shape
+    #
+    # # Experience buffer
+    # local_steps_per_epoch = int(steps_per_epoch / num_procs())
+    # pi_info_shapes = {k: v.shape.as_list()[1:] for k, v in pi_info_phs.items()}
+    # buf = CPOBuffer(local_steps_per_epoch,
+    #                 obs_shape,
+    #                 act_shape,
+    #                 pi_info_shapes,
+    #                 gamma,
+    #                 lam,
+    #                 cost_gamma,
+    #                 cost_lam)
+    #
+    # #=========================================================================#
+    # #  Create computation graph for penalty learning, if applicable           #
+    # #=========================================================================#
+    #
+    # if agent.use_penalty:
+    #     with tf.variable_scope('penalty'):
+    #         # param_init = np.log(penalty_init)
+    #         param_init = np.log(max(np.exp(penalty_init)-1, 1e-8))
+    #         penalty_param = tf.get_variable('penalty_param',
+    #                                         initializer=float(param_init),
+    #                                         trainable=agent.learn_penalty,
+    #                                         dtype=tf.float32)
+    #     # penalty = tf.exp(penalty_param)
+    #     penalty = tf.nn.softplus(penalty_param)
+    #
+    # if agent.learn_penalty:
+    #     if agent.penalty_param_loss:
+    #         penalty_loss = -penalty_param * (cur_cost_ph - cost_lim)
+    #     else:
+    #         penalty_loss = -penalty * (cur_cost_ph - cost_lim)
+    #     train_penalty = MpiAdamOptimizer(learning_rate=penalty_lr).minimize(penalty_loss)
+    #
+    # #=========================================================================#
+    # #  Create computation graph for policy learning                           #
+    # #=========================================================================#
+    #
+    # # Likelihood ratio
+    # ratio = tf.exp(logp - logp_old_ph)
+    #
+    # # Surrogate advantage / clipped surrogate advantage
+    # if agent.clipped_adv:
+    #     min_adv = tf.where(adv_ph > 0,
+    #                        (1+agent.clip_ratio)*adv_ph,
+    #                        (1-agent.clip_ratio)*adv_ph
+    #                        )
+    #     surr_adv = tf.reduce_mean(tf.minimum(ratio * adv_ph, min_adv))
+    # else:
+    #     surr_adv = tf.reduce_mean(ratio * adv_ph)
+    #
+    # # Surrogate cost
+    # surr_cost = tf.reduce_mean(ratio * cadv_ph)
+    #
+    # # Create policy objective function, including entropy regularization
+    # pi_objective = surr_adv + ent_reg * ent
+    #
+    # # Possibly include surr_cost in pi_objective
+    # if agent.objective_penalized:
+    #     pi_objective -= penalty * surr_cost
+    #     pi_objective /= (1 + penalty)
+    #
+    # # Loss function for pi is negative of pi_objective
+    # pi_loss = -pi_objective
+    #
+    # # Optimizer-specific symbols
+    # if agent.trust_region:
+    #
+    #     # Symbols needed for CG solver for any trust region method
+    #     pi_params = get_vars('pi')
+    #     flat_g = tro.flat_grad(pi_loss, pi_params)
+    #     v_ph, hvp = tro.hessian_vector_product(d_kl, pi_params)
+    #     if agent.damping_coeff > 0:
+    #         hvp += agent.damping_coeff * v_ph
+    #
+    #     # Symbols needed for CG solver for CPO only
+    #     flat_b = tro.flat_grad(surr_cost, pi_params)
+    #
+    #     # Symbols for getting and setting params
+    #     get_pi_params = tro.flat_concat(pi_params)
+    #     set_pi_params = tro.assign_params_from_flat(v_ph, pi_params)
+    #
+    #     training_package = dict(flat_g=flat_g,
+    #                             flat_b=flat_b,
+    #                             v_ph=v_ph,
+    #                             hvp=hvp,
+    #                             get_pi_params=get_pi_params,
+    #                             set_pi_params=set_pi_params)
+    #
+    # elif agent.first_order:
+    #
+    #     # Optimizer for first-order policy optimization
+    #     train_pi = MpiAdamOptimizer(learning_rate=agent.pi_lr).minimize(pi_loss)
+    #
+    #     # Prepare training package for agent
+    #     training_package = dict(train_pi=train_pi)
+    #
+    # else:
+    #     raise NotImplementedError
+    #
+    # # Provide training package to agent
+    # training_package.update(dict(pi_loss=pi_loss,
+    #                              surr_cost=surr_cost,
+    #                              d_kl=d_kl,
+    #                              target_kl=target_kl,
+    #                              cost_lim=cost_lim))
+    # agent.prepare_update(training_package)
+    #
+    # #=========================================================================#
+    # #  Create computation graph for value learning                            #
+    # #=========================================================================#
+    #
+    # # Value losses
+    # v_loss = tf.reduce_mean((ret_ph - v)**2)
+    # vc_loss = tf.reduce_mean((cret_ph - vc)**2)
+    #
+    # # If agent uses penalty directly in reward function, don't train a separate
+    # # value function for predicting cost returns. (Only use one vf for r - p*c.)
+    # if agent.reward_penalized:
+    #     total_value_loss = v_loss
+    # else:
+    #     total_value_loss = v_loss + vc_loss
+    #
+    # # Optimizer for value learning
+    # train_vf = MpiAdamOptimizer(learning_rate=vf_lr).minimize(total_value_loss)
+    #
+    # #=========================================================================#
+    # #  Create session, sync across procs, and set up saver                    #
+    # #=========================================================================#
+    #
+    # sess = tf.Session()
+    # sess.run(tf.global_variables_initializer())
+    #
+    # # Sync params across processes
+    # sess.run(sync_all_params())
+    #
+    # # Setup model saving
+    # logger.setup_tf_saver(sess, inputs={'x': x_ph}, outputs={'pi': pi, 'v': v, 'vc': vc})
 
     #=========================================================================#
     #  Provide session to agent                                               #

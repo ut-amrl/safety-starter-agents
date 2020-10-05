@@ -2,7 +2,8 @@
 
 import safety_gym
 import gym
-from spinup import td3_pytorch as ddpg
+# from spinup import td3_pytorch as ddpg
+from spinup import td3_tf1 as ddpg
 from safe_rl.utils.run_utils import setup_logger_kwargs
 from safe_rl.utils.mpi_tools import mpi_fork
 from datetime import date

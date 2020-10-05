@@ -2,7 +2,7 @@
 
 import safety_gym
 import gym
-from spinup import ddpg_tf1 as ddpg
+from spinup import td3_pytorch as ddpg
 from safe_rl.utils.run_utils import setup_logger_kwargs
 from datetime import date
 
@@ -23,6 +23,9 @@ def ddpg_wrapper(exp_name='', seed=10):
     ddpg(lambda: gym.make('Safexp-PointButton1-v0'),
          steps_per_epoch=steps_per_epoch,
          epochs=epochs,
+         update_after=steps_per_epoch,
+         update_every=steps_per_epoch,
+         max_ep_len=1000,
          logger_kwargs=logger_kwargs,
          save_freq=save_freq
          )

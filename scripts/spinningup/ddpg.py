@@ -3,7 +3,7 @@
 import safety_gym
 import gym
 # from spinup import td3_pytorch as ddpg
-from spinup import td3_tf1 as ddpg
+from spinup import ddpg_tf1 as ddpg
 from safe_rl.utils.run_utils import setup_logger_kwargs
 from safe_rl.utils.mpi_tools import mpi_fork
 from datetime import date
@@ -23,7 +23,7 @@ def ddpg_wrapper(exp_name='', seed=10, cpu=1):
     save_freq = 50
 
     # Fork for parallelizing
-    mpi_fork(cpu)
+    # mpi_fork(cpu)
 
     # Prepare Logger
     logger_kwargs = setup_logger_kwargs(exp_name, seed)
